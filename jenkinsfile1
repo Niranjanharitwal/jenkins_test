@@ -1,29 +1,27 @@
 pipeline {
     agent any
-
+    
+    tools {
+        maven "MVN3"
+    }
+    
     stages {
-        stage('define parameter') {
-            steps{
-                script {
-                    properties([
-                        parameters([
-                            choice(
-                                choices: ["dev", "uat", "prod"],
-                                name: "ENVIRONMENT"
-                            ),
-                            string(
-                                defaultValue: "training",
-                                name: "STRING"
-                            )
-                        ])
-                    ])
-                }
+        stage ('pull scm') {
+            steps {
+                git credentialsId: 'github', url: 'https://github.com/Niranjanharitwal/jenkins_test.git'
             }
         }
         
-        stage('Print parameter') {
+        stage('build') {
             steps {
-                echo "Choice parameter is $ENVIRONMENT"
+                sh "mvn -f api-gateway/ clean package"
+            }
+        }
+        
+        stage('publish') {
+            steps {
+                archiveArtifacts artifacts: 'api-gateway/target/*.jar', followSymlinks: false
+                junit stdioRetention: '', testResults: 'api-gateway/target/surefire-reports/*.xml'
             }
         }
     }
